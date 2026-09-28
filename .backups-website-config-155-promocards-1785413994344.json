@@ -1,0 +1,3 @@
+{
+  "promo_cards_props": "[{\"id\":\"venta\",\"kind\":\"static_link\",\"position\":0,\"title\":\"Venta\",\"subtitle\":\"Pisos y casas en venta\",\"href\":\"/venta-propiedades/todas-ubicaciones\",\"imageUrl\":\"https://vesta-crm-prod-eu-e966e353.s3.eu-west-1.amazonaws.com/accounts/155/website/categories/venta_1785412425211.jpg\"},{\"id\":\"inversiones\",\"kind\":\"static_link\",\"position\":1,\"title\":\"Inversiones\",\"subtitle\":\"Rentabilidad y oportunidad\",\"href\":\"/inversiones\",\"imageUrl\":\"https://vesta-crm-prod-eu-e966e353.s3.eu-west-1.amazonaws.com/accounts/155/website/categories/inversiones_1785412425211.jpg\"}]"
+}

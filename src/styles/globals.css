@@ -1,0 +1,128 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 219 17% 22%;
+    --card: 0 0% 100%;
+    --card-foreground: 219 17% 22%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 219 17% 22%;
+    --primary: 219 22% 14%;
+    --primary-foreground: 0 0% 98%;
+    --brand: 219 22% 14%;
+    --brand-foreground: 0 0% 98%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 219 22% 14%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 219 14% 45%;
+    --accent: 220 14% 96%;
+    --accent-foreground: 219 22% 14%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 219 22% 14%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 219 22% 8%;
+    --foreground: 219 14% 92%;
+    --card: 219 22% 8%;
+    --card-foreground: 219 14% 92%;
+    --popover: 219 22% 8%;
+    --popover-foreground: 219 14% 92%;
+    --primary: 219 14% 92%;
+    --primary-foreground: 219 22% 14%;
+    --brand: 219 14% 92%;
+    --brand-foreground: 219 22% 14%;
+    --secondary: 219 17% 16%;
+    --secondary-foreground: 219 14% 92%;
+    --muted: 219 17% 16%;
+    --muted-foreground: 219 10% 65%;
+    --accent: 219 17% 16%;
+    --accent-foreground: 219 14% 92%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 219 17% 18%;
+    --input: 219 17% 18%;
+    --ring: 219 14% 80%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer components {
+  .flex-center {
+    @apply flex items-center justify-center;
+  }
+
+  .eyebrow {
+    @apply uppercase tracking-eyebrow text-xs font-medium text-muted-foreground;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center h-12 rounded-full px-8 text-base font-medium
+           bg-primary text-primary-foreground
+           hover:bg-primary/90 transition-colors duration-200
+           focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center h-12 rounded-full px-8 text-base font-medium
+           bg-secondary text-secondary-foreground
+           hover:bg-secondary/90 transition-colors duration-200
+           focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-2;
+  }
+
+  .input-primary {
+    @apply block h-11 w-full rounded-md border border-input bg-background px-4 text-base
+           transition-colors hover:border-foreground/30
+           focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 md:text-sm;
+  }
+}
+
+/* Oportunidad card shimmer animation */
+@keyframes oportunidad-glow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(251, 191, 36, 0);
+  }
+  40% {
+    box-shadow: 0 0 25px 3px rgba(251, 191, 36, 0.5);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(251, 191, 36, 0);
+  }
+}
+
+.animate-oportunidad {
+  animation: oportunidad-glow 2.5s ease-out forwards;
+}
