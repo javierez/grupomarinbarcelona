@@ -1,0 +1,7 @@
+{
+  "row": {
+    "testimonial_props": "{}",
+    "promo_cards_props": "[{\"id\":\"segunda-mano\",\"kind\":\"static_link\",\"title\":\"Compraventa\",\"subtitle\":\"Pisos y casas en venta\",\"href\":\"/venta-propiedades/todas-ubicaciones\",\"imageUrl\":\"https://vesta-crm-prod-eu-e966e353.s3.eu-west-1.amazonaws.com/accounts/224/hero/card-segunda-mano_74cb330c.jpg\",\"position\":0},{\"id\":\"inversiones\",\"kind\":\"static_link\",\"title\":\"Inversiones\",\"subtitle\":\"Rentabilidad y oportunidad\",\"href\":\"/inversiones\",\"imageUrl\":\"https://vesta-crm-prod-eu-e966e353.s3.eu-west-1.amazonaws.com/accounts/224/hero/card-inversiones_8dadc53f.jpg\",\"position\":1}]"
+  },
+  "existing": []
+}

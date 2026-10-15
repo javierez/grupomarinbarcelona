@@ -1,0 +1,3 @@
+.backups-*.json
+scratchpad
+.env.local.bak
