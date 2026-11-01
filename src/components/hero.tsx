@@ -1,0 +1,121 @@
+import { getHeroProps, getHeroCities } from "../server/queries/hero";
+import { getLogo } from "../server/queries/logo";
+import { getFeaturesProps } from "../server/queries/website-config";
+import { getHeroDirectButtons } from "../server/queries/promo-cards";
+import { hrefForCard } from "~/server/promo-cards/href";
+import { VENTA_HREF, ALQUILER_HREF } from "~/lib/listing-links";
+import { getColorProps } from "../server/queries/color";
+import { HeroClient } from "./hero-client";
+import { HeroEditorial } from "./hero-editorial";
+import { HeroV3 } from "./v3/hero-v3";
+import { resolveHeroMedia } from "~/lib/hero-media";
+
+/** What the templates hardcoded before the buttons became configurable. */
+const DEFAULT_DIRECT_BUTTONS = [
+  { label: "Venta", href: VENTA_HREF },
+  { label: "Alquiler", href: ALQUILER_HREF },
+];
+
+export default async function Hero({ accountId }: { accountId?: bigint } = {}) {
+  const [heroProps, cities, logoUrl, features, directButtons] =
+    await Promise.all([
+      getHeroProps(accountId),
+      getHeroCities(accountId),
+      getLogo(accountId),
+      getFeaturesProps(accountId),
+      getHeroDirectButtons(accountId),
+    ]);
+
+  // Resolved here rather than in the client so the destination logic stays in
+  // one place, shared with the promo cards.
+  const resolvedDirectButtons =
+    directButtons.length > 0
+      ? directButtons.map((b) => ({ label: b.label, href: hrefForCard(b) }))
+      : DEFAULT_DIRECT_BUTTONS;
+
+  // Blank is a real, saved value here ("use the default copy"), so it has to
+  // become undefined rather than reach the input as an empty placeholder.
+  const trimmedPlaceholder = features.heroSearchPlaceholder?.trim();
+  const searchPlaceholder =
+    trimmedPlaceholder === "" ? undefined : trimmedPlaceholder;
+
+  // Fallbacks in case data is missing
+  const title =
+    heroProps?.title || "Encuentra Tu Propiedad Soñada";
+  const subtitle =
+    heroProps?.subtitle ||
+    "Descubre propiedades excepcionales en ubicaciones privilegiadas. Permítenos guiarte en tu viaje inmobiliario.";
+  const findPropertyButton =
+    heroProps?.findPropertyButton || "Explorar Propiedades";
+  const contactButton =
+    features.menuLabels?.contacto || heroProps?.contactButton || "Contáctanos";
+  const backgroundMedia = heroProps?.backgroundMedia;
+  const backgroundType = heroProps?.backgroundType || "image";
+  const backgroundVideo = heroProps?.backgroundVideo;
+  const backgroundImage = heroProps?.backgroundImage;
+
+  if (features.heroStyle === "v3") {
+    const media = resolveHeroMedia(heroProps);
+    const configured = heroProps?.slides?.filter((s) => s.title?.trim()) ?? [];
+    const slides = (
+      configured.length > 0
+        ? configured
+        : [{ title, subtitle, buttonText: findPropertyButton }]
+    ).map((s, i) => ({
+      title: s.title,
+      subtitle: s.subtitle,
+      buttonText: s.buttonText,
+      href: ("href" in s && s.href) || "#properties",
+      media: ("image" in s && s.image
+        ? { url: s.image, type: "image" as const }
+        : (media[i % Math.max(media.length, 1)] ?? null)),
+    }));
+    return (
+      <HeroV3
+        slides={slides}
+        poster={backgroundImage}
+        overlayOpacity={features.heroOverlayOpacity ?? 0.38}
+      />
+    );
+  }
+
+  if (features.siteStyle === "editorial") {
+    const colorProps = await getColorProps(accountId);
+    return (
+      <HeroEditorial
+        title={title}
+        subtitle={subtitle}
+        findPropertyButton={findPropertyButton}
+        contactButton={contactButton}
+        backgroundMedia={backgroundMedia}
+        backgroundType={backgroundType}
+        backgroundVideo={backgroundVideo}
+        backgroundImage={backgroundImage}
+        cities={cities}
+        heroSize={features.heroSize ?? "standard"}
+        brandColor={colorProps?.primaryColor}
+      />
+    );
+  }
+
+  return (
+    <HeroClient
+      title={title}
+      subtitle={subtitle}
+      findPropertyButton={findPropertyButton}
+      contactButton={contactButton}
+      backgroundMedia={backgroundMedia}
+      backgroundType={backgroundType}
+      backgroundVideo={backgroundVideo}
+      backgroundImage={backgroundImage}
+      cities={cities}
+      logoUrl={logoUrl}
+      heroSize={features.heroSize ?? "standard"}
+      heroDirectAccess={features.heroDirectAccess === true}
+      directButtons={resolvedDirectButtons}
+      searchPlaceholder={searchPlaceholder}
+      overlayOpacity={features.heroOverlayOpacity ?? 0.35}
+      topScrim={features.heroTopScrim === true}
+    />
+  );
+}
