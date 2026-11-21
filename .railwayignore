@@ -1,0 +1,5 @@
+.backups-*.json
+scratchpad
+.env.local.bak
+# Lo ignora git, pero la imagen del generador lo necesita (template-version.ts)
+!scripts/generate-site/.template-version

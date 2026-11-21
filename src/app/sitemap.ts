@@ -1,0 +1,172 @@
+import type { MetadataRoute } from "next";
+import {
+  getAllListingSitemapData,
+  getDistinctSearchCombinations,
+} from "~/server/queries/listings";
+import { buildSearchSlug } from "~/lib/search-utils";
+import type { PropertyType } from "~/lib/search-utils";
+import { buildPropertySlug } from "~/lib/property-slug";
+import { getContactProps } from "~/server/queries/contact";
+import { getFeaturesProps, getModulesConfig } from "~/server/queries/website-config";
+import { esMuestra } from "~/lib/pagina-propia";
+import { getBlogPosts, getBlogProps } from "~/server/queries/blog";
+import { isAccount141 } from "~/lib/account-overrides/141";
+import { getSiteUrl } from "~/lib/site-url";
+
+export const revalidate = 3600;
+// Sin cabeceras: siempre lo publicado, nunca un borrador (la configuración
+// se lee de la caché de datos con etiqueta, ver queries/site-config).
+export const dynamic = "force-static";
+
+// Matches the normalize() used in src/app/contacto/[ciudad]/page.tsx so the
+// slugs we emit here resolve to real office matches at request time.
+function citySlug(city: string): string {
+  return city
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-");
+}
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const baseUrl =
+    getSiteUrl();
+
+  // Fetch data in parallel
+  const [listingData, searchCombos, contactProps, modulesConfig, blogProps, features] =
+    await Promise.all([
+      getAllListingSitemapData(),
+      getDistinctSearchCombinations(),
+      getContactProps(),
+      getModulesConfig(),
+      getBlogProps(),
+      getFeaturesProps(),
+    ]);
+
+  // The blog stays out of the sitemap until the account enables it — while
+  // hidden it is reachable only by someone holding the URL.
+  const blogPages: MetadataRoute.Sitemap = blogProps.enabled
+    ? [
+        {
+          url: `${baseUrl}/blog`,
+          lastModified: new Date(),
+          changeFrequency: "weekly" as const,
+          priority: 0.6,
+        },
+        ...(await getBlogPosts()).map((post) => ({
+          url: `${baseUrl}/blog/${post.slug}`,
+          lastModified: post.updatedAt,
+          changeFrequency: "monthly" as const,
+          priority: 0.6,
+        })),
+      ]
+    : [];
+
+  // Static pages
+  const now = new Date();
+  const staticPages: MetadataRoute.Sitemap = [
+    { url: baseUrl, lastModified: now, changeFrequency: "daily", priority: 1.0 },
+    ...(modulesConfig.promotionsEnabled
+      ? [{ url: `${baseUrl}/promociones`, lastModified: now, changeFrequency: "weekly" as const, priority: 0.8 }]
+      : []),
+    // /reformas only exists for account 141 (Grupo Marín); it 404s elsewhere.
+    ...(isAccount141()
+      ? [{ url: `${baseUrl}/reformas`, lastModified: now, changeFrequency: "monthly" as const, priority: 0.9 }]
+      : []),
+    { url: `${baseUrl}/inversiones`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${baseUrl}/contacto`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
+    { url: `${baseUrl}/faqs`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
+    { url: `${baseUrl}/vender`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
+    {
+      url: `${baseUrl}/aviso-legal`,
+      lastModified: now,
+      changeFrequency: "yearly",
+      priority: 0.2,
+    },
+    {
+      url: `${baseUrl}/proteccion-de-datos`,
+      lastModified: now,
+      changeFrequency: "yearly",
+      priority: 0.2,
+    },
+    { url: `${baseUrl}/cookies`, lastModified: now, changeFrequency: "yearly", priority: 0.2 },
+    {
+      url: `${baseUrl}/terminos-condiciones-venta`,
+      lastModified: now,
+      changeFrequency: "yearly",
+      priority: 0.2,
+    },
+    {
+      url: `${baseUrl}/enlaces-de-interes`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.3,
+    },
+  ];
+
+  // The agency's own pages (features_props.paginas). The published ones only:
+  // the samples never leave the draft.
+  const ownPages: MetadataRoute.Sitemap = (features.paginas ?? [])
+    .filter((pagina) => !esMuestra(pagina.slug))
+    .map((pagina) => ({
+      url: `${baseUrl}/${pagina.slug}`,
+      lastModified: now,
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+    }));
+
+  // Property pages — SEO-friendly slugs with trailing numeric id
+  const propertyPages: MetadataRoute.Sitemap = listingData.map((listing) => ({
+    url: `${baseUrl}/propiedades/${buildPropertySlug(listing)}`,
+    lastModified: listing.updatedAt ?? undefined,
+    changeFrequency: "weekly",
+    priority: 0.8,
+  }));
+
+  // Search landing pages from distinct combinations. Varios subtipos del mismo
+  // tipo y ciudad dan la misma URL: se emite una sola vez.
+  const searchUrls = new Set(
+    searchCombos.map(
+      (combo) =>
+        `${baseUrl}/${buildSearchSlug({
+          propertyType: combo.propertyType as PropertyType,
+          location: combo.city,
+          status: combo.status,
+        })}`,
+    ),
+  );
+  const searchPages: MetadataRoute.Sitemap = Array.from(searchUrls).map(
+    (url) => ({
+      url,
+      changeFrequency: "daily",
+      priority: 0.7,
+    }),
+  );
+
+  // Per-office city contact pages (/contacto/[ciudad])
+  const officeCitySlugs = Array.from(
+    new Set(
+      (contactProps?.offices ?? [])
+        .map((office) => citySlug(office.address.city ?? ""))
+        .filter(Boolean),
+    ),
+  );
+  const contactCityPages: MetadataRoute.Sitemap = officeCitySlugs.map(
+    (slug) => ({
+      url: `${baseUrl}/contacto/${encodeURIComponent(slug)}`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.5,
+    }),
+  );
+
+  return [
+    ...staticPages,
+    ...ownPages,
+    ...blogPages,
+    ...propertyPages,
+    ...searchPages,
+    ...contactCityPages,
+  ];
+}
